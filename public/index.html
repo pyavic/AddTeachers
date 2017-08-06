@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Teachers List</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+</head>
+<body>
+    <h2>Teachers List</h2>
+    <form name="teacherForm">
+        <input type="hidden" name="id" value="0" />
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input class="form-control" name="name" />
+        </div>
+        <div class="form-group">
+            <label for="father">Father:</label>
+            <input class="form-control" name="father" />
+        </div>
+        <div class="form-group">
+            <label for="surname">Surname:</label>
+            <input class="form-control" name="surname" />
+        </div>
+        <div class="panel-body">
+            <button type="submit" class="btn btn-sm btn-primary">Save</button>
+            <a id="reset" class="btn btn-sm btn-primary">Reset</a>
+        </div>
+    </form>
+    <table class="table table-condensed table-striped table-bordered">
+        <thead><tr><th>Id</th><th>Name</th><th>Father</th><th>Surname</th><th></th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+
+//access to all teacehrs
+        function GetTeachers() {
+            $.ajax({
+                url: "/api/teachers",
+                type: "GET",
+                contentType: "application/json",
+                success: function (teachers) {
+                    var rows = "";
+                    $.each(teachers, function (index, teacher) {
+                        //елемнт в таблицю
+                        rows += row(teacher);
+                    })
+                    $("table tbody").append(rows);
+                 }
+            });
+        }
+        // отримання одного вчителя
+        function GetTeacher(id) {
+            $.ajax({
+                url: "/api/teachers/"+id,
+                type: "GET",
+                contentType: "application/json",
+                success: function (teacher) {
+                    var form = document.forms["teacherForm"];
+                    form.elements["id"].value = teacher._id;
+                    form.elements["name"].value = teacher.name;
+                    form.elements["father"].value = teacher.father;
+                    form.elements["surname"].value = teacher.surname;
+
+                }
+            });
+        }
+        // add teacher
+        function CreateTeacher(teacherName, teacherFather , teacherSurname) {
+            $.ajax({
+                url: "api/teachers",
+                contentType: "application/json",
+                method: "POST",
+                data: JSON.stringify({
+                    name: teacherName,
+                    father: teacherFather,
+                    surname: teacherSurname
+                }),
+                success: function (teacher) {
+                    reset();
+                    $("table tbody").append(row(teacher));
+                }
+            })
+        }
+        // change/edit
+        function EditTeacher(teacherId, teacherName, teacherFather, teacherSurname) {
+            $.ajax({
+                url: "api/teachers",
+                contentType: "application/json",
+                method: "PUT",
+                data: JSON.stringify({
+                    id: teacherId,
+                    name: teacherName,
+                    father: teacherFather,
+                    surname:teacherSurname
+                }),
+                success: function (teacher) {
+                    reset();
+                    console.log(teacher);
+                    $("tr[data-rowid='" + teacher._id + "']").replaceWith(row(teacher));
+                }
+            })
+        }
+
+        // 
+        function reset() {
+            var form = document.forms["teacherForm"];
+            form.reset();
+            form.elements["id"].value = 0;
+        }
+
+        // delete
+        function DeleteTeacher(id) {
+            $.ajax({
+                url: "api/teachers/"+id,
+                contentType: "application/json",
+                method: "DELETE",
+                success: function (teacher) {
+                    console.log(teacher);
+                    $("tr[data-rowid='" + teacher._id + "']").remove();
+                }
+            })
+        }
+        // add string to a table
+        var row = function (teacher) {
+            return "<tr data-rowid='" + teacher._id + "'><td>" + teacher._id + "</td>" +
+                   "<td>" + teacher.name + "</td> <td>" + teacher.father + "</td> <td>" + teacher.surname + "</td> "+
+                   "<td><a class='editLink' data-id='" + teacher._id + "'>Edit</a> | " +
+                    "<a class='removeLink' data-id='" + teacher._id + "'>Delete</a></td></tr>";
+        }
+
+        $("#reset").click(function (e) {
+
+            e.preventDefault();
+            reset();
+        })
+
+
+        $("form").submit(function (e) {
+            e.preventDefault();
+            var id = this.elements["id"].value;
+            var name = this.elements["name"].value;
+            var father = this.elements["father"].value;
+            var surname = this.elements["surname"].value;
+            if (id == 0)
+                CreateTeacher(name, father , surname);
+            else
+                EditTeacher(id, name, father, surname);
+        });
+
+        //"edit" button
+        $("body").on("click", ".editLink", function () {
+            var id = $(this).data("id");
+            GetTeacher(id);
+        })
+        // "delete" button
+        $("body").on("click", ".removeLink", function () {
+            var id = $(this).data("id");
+            DeleteTeacher(id);
+        })
+
+        // upload all teachers
+        GetTeachers();
+    </script>
+</body>
+</html>
